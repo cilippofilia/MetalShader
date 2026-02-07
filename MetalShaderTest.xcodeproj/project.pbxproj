@@ -35,16 +35,6 @@
 			path = MetalShaderTest;
 			sourceTree = "<group>";
 		};
-		1833A9A12F37DC1D002F06E8 /* MetalShaderTestTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MetalShaderTestTests;
-			sourceTree = "<group>";
-		};
-		1833A9AB2F37DC1D002F06E8 /* MetalShaderTestUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MetalShaderTestUITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,8 +66,6 @@
 			isa = PBXGroup;
 			children = (
 				1833A9932F37DC1C002F06E8 /* MetalShaderTest */,
-				1833A9A12F37DC1D002F06E8 /* MetalShaderTestTests */,
-				1833A9AB2F37DC1D002F06E8 /* MetalShaderTestUITests */,
 				1833A9922F37DC1C002F06E8 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -130,9 +118,6 @@
 			dependencies = (
 				1833A9A02F37DC1D002F06E8 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				1833A9A12F37DC1D002F06E8 /* MetalShaderTestTests */,
-			);
 			name = MetalShaderTestTests;
 			packageProductDependencies = (
 			);
@@ -152,9 +137,6 @@
 			);
 			dependencies = (
 				1833A9AA2F37DC1D002F06E8 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				1833A9AB2F37DC1D002F06E8 /* MetalShaderTestUITests */,
 			);
 			name = MetalShaderTestUITests;
 			packageProductDependencies = (
