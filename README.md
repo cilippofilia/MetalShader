@@ -1,95 +1,55 @@
 # MetalShaderTest
 
-A compact SwiftUI + Metal playground with two real-time effects:
-- A full-screen animated "curtains" background.
-- A Siri-like glowing border overlay.
+SwiftUI + Metal iOS demo app with real-time shader visuals:
+- Animated full-screen "curtains" background.
+- Optional Siri-style glowing halo border overlay.
 
-Everything is configurable live from a settings sheet, and settings are persisted between launches.
+All visual parameters are adjustable from a settings sheet and persisted across launches.
 
 ## Quick Start
 
-1. Open `MetalShaderTest.xcodeproj` in Xcode.
+1. Open `MetalShader.xcodeproj` in Xcode.
 2. Select an iOS simulator or device.
-3. Run the `MetalShaderTest` scheme.
+3. Run the `MetalShader` scheme.
 
-## What You See On Screen
+## Features
 
-- Background: rendered by Metal (`CurtainsRenderer`).
-- Halo border: optional transparent Metal overlay (`SiriHaloRenderer`).
-- FPS label: shows current background renderer frame rate.
-- Controls:
-  - Top-right button opens the personalization sheet.
-  - Bottom segmented picker switches background style/palette.
+- Live Metal-rendered background (`CurtainsRenderer`).
+- Live Metal-rendered transparent halo overlay (`SiriHaloRenderer`).
+- In-app settings sheet for halo and background tuning.
+- Persisted personalization via `@AppStorage`.
+- FPS readout for quick shader tuning feedback.
 
-## Architecture
+## Project Structure
 
-### UI Layer (SwiftUI)
+- `MetalShader/MetalShaderTestApp.swift`: app entry point.
+- `MetalShader/ContentView.swift`: root composition, settings persistence, and sheet presentation.
+- `MetalShader/Background/CurtainsBackgroundView.swift`: `MTKView` wrapper for background rendering.
+- `MetalShader/Background/CurtainsRenderer.swift`: background shader + render loop.
+- `MetalShader/Halo/SiriHaloBorderView.swift`: transparent `MTKView` overlay wrapper.
+- `MetalShader/Halo/SiriHaloRenderer.swift`: halo shader + blend pipeline.
+- `MetalShader/Settings/SettingsSheetView.swift`: personalization UI.
+- `MetalShader/Settings/ViewPersonalizationSettings.swift`: codable settings model.
+- `MetalShader/Settings/SliderRowView.swift`: reusable slider row component.
 
-- `MetalShaderTest/MetalShaderTestApp.swift`: app entry point.
-- `MetalShaderTest/ContentView.swift`: composes the scene and binds settings/state.
+## Settings Overview
 
-### Rendering Layer (Metal)
+Halo controls include:
+- Visibility, corner radius, edge inset.
+- Core/glow/mist widths.
+- Strength, pulse base/amount/speed.
+- Color shift speed.
 
-- Background:
-  - `MetalShaderTest/Background/CurtainsBackgroundView.swift`: `UIViewRepresentable` wrapper around `MTKView`.
-  - `MetalShaderTest/Background/CurtainsRenderer.swift`: render loop + inline Metal shader.
-  - `MetalShaderTest/Background/BackgroundStyle.swift`: style presets and palette interpolation.
-- Halo:
-  - `MetalShaderTest/Halo/SiriHaloBorderView.swift`: transparent `MTKView` overlay.
-  - `MetalShaderTest/Halo/SiriHaloRenderer.swift`: halo shader + blend setup.
+Background controls include:
+- Soft glow toggle.
+- Custom base color.
+- Wave amplitude/frequency/speed.
+- Touch glow radius/intensity.
+- Touch follow smoothing.
 
-### Settings Layer
+## Performance Notes
 
-- `MetalShaderTest/Settings/ViewPersonalizationSettings.swift`: codable model for user-tunable parameters.
-- `ContentView` persists this model in `@AppStorage("viewPersonalizationSettingsData")`.
-
-## Frame Pipeline (Background)
-
-For each frame:
-1. `CurtainsRenderer.draw(in:)` reads time + current settings.
-2. Touch position is smoothed (`touchFollowSpeed`) before sending to shader.
-3. Style transition progress is computed (with easing).
-4. Uniforms are uploaded to the fragment shader.
-5. A full-screen triangle is drawn; the shader computes final pixel color.
-
-## Shader Responsibilities
-
-- `CurtainsRenderer` shader:
-  - Blends from one color palette to another.
-  - Applies a sine wave distortion to the vertical gradient.
-  - Adds touch-driven glow near the current touch UV.
-- `SiriHaloRenderer` shader:
-  - Builds a rounded-rectangle distance field.
-  - Creates layered glow bands (core/mid/mist).
-  - Animates hue and pulse over time.
-
-## Settings Guide
-
-### Halo
-- `cornerRadius`, `edgeInset`: border shape/layout.
-- `coreWidth`, `glowWidth`, `mistWidth`: thickness of glow layers.
-- `haloStrength`: overall visibility.
-- `pulseBase`, `pulseAmount`, `pulseSpeed`: breathing animation.
-- `colorShiftSpeed`: speed of hue rotation.
-
-### Background
-- `waveAmplitude`, `waveFrequency`, `waveSpeed`: curtain motion.
-- `touchGlowRadius`, `touchGlowIntensity`: touch light behavior.
-- `touchFollowSpeed`: smoothing of touch movement.
-- `softGlowEnabled`: master switch for glow contribution.
-
-## Common Customizations
-
-- Add a new theme:
-  - Add a new case in `BackgroundStyle`.
-  - Return a new `BackgroundPalette` in `palette`.
-- Change default visual tuning:
-  - Update default values in `HaloEffectSettings` / `BackgroundEffectSettings`.
-- Redesign visual logic:
-  - Edit `shaderSource` in `CurtainsRenderer` and/or `SiriHaloRenderer`.
-
-## Implementation Notes
-
-- Shader source is embedded as Swift multiline strings and compiled at runtime.
-- `MTKView` runs continuously (`isPaused = false`) at up to `min(120, device max FPS)`.
-- Halo overlay uses alpha blending and a transparent clear color, so only glow pixels are visible.
+- Setting changes update the shaders immediately.
+- Settings persistence is debounced to avoid writing on every slider tick.
+- Renderer FPS is reduced while the sheet is open to improve interaction smoothness.
+- Shaders are embedded as Swift multiline strings and compiled at runtime.
