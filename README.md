@@ -20,6 +20,11 @@ All visual parameters are adjustable from a settings sheet and persisted across 
 - Persisted personalization via `@AppStorage`.
 - FPS readout for quick shader tuning feedback.
 
+## Examples
+
+- Halo effect demo: [examples/Halo.mov](examples/Halo.mov)
+- Soft glow background demo: [examples/softGlow.mov](examples/softGlow.mov)
+
 ## Project Structure
 
 - `MetalShader/MetalShaderTestApp.swift`: app entry point.
