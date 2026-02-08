@@ -27,7 +27,10 @@ struct SiriHaloBorderView: UIViewRepresentable {
         view.backgroundColor = .clear
         view.isOpaque = false
         view.colorPixelFormat = .bgra8Unorm
-        view.preferredFramesPerSecond = min(60, 120)
+        let maxFPS = UIApplication.shared.connectedScenes
+            .compactMap { ($0 as? UIWindowScene)?.screen.maximumFramesPerSecond }
+            .max() ?? 60
+        view.preferredFramesPerSecond = maxFPS
         view.enableSetNeedsDisplay = false
         view.isPaused = false
 
