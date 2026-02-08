@@ -17,6 +17,8 @@ All visual parameters are adjustable from a settings sheet and persisted across 
 - Live Metal-rendered background (`CurtainsRenderer`).
 - Live Metal-rendered transparent halo overlay (`SiriHaloRenderer`).
 - In-app settings sheet for halo and background tuning.
+- Geometric halo wave animation with configurable shape/speed parameters.
+- Touch-driven soft glow with inertial glide and wall-bounce behavior.
 - Persisted personalization via `@AppStorage`.
 - FPS readout for quick shader tuning feedback.
 
@@ -47,6 +49,7 @@ https://github.com/user-attachments/assets/41921930-2749-4b5d-a564-0d4622423b2a
 
 Halo controls include:
 - Visibility, corner radius, edge inset.
+- Wave inset/amplitude/count/speed controls.
 - Core/glow/mist widths.
 - Strength, pulse base/amount/speed.
 - Color shift speed.
@@ -57,6 +60,7 @@ Background controls include:
 - Wave amplitude/frequency/speed.
 - Touch glow radius/intensity.
 - Touch follow smoothing.
+- Inertia strength and damping for post-touch motion.
 
 ## Performance Notes
 
@@ -64,3 +68,4 @@ Background controls include:
 - Settings persistence is debounced to avoid writing on every slider tick.
 - Renderer FPS is reduced while the sheet is open to improve interaction smoothness.
 - Shaders are embedded as Swift multiline strings and compiled at runtime.
+- Soft glow inertia reflects at screen bounds and loses energy over time.
