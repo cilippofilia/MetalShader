@@ -9,9 +9,9 @@ import Foundation
 import MetalKit
 
 /// Metal renderer for the full-screen animated "curtains" background.
-/// Compiles shader source at runtime and drives transitions/touch-driven glow.
+/// Compiles shader source at runtime and drives touch-driven glow.
 final class CurtainsRenderer: NSObject, MTKViewDelegate {
-    /// Uniform block used to blend from one palette to another.
+    /// Uniform block for palette colors consumed by the shader.
     private struct TransitionUniforms {
         var fromTopColor: SIMD4<Float>
         var fromBottomColor: SIMD4<Float>
@@ -44,18 +44,14 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
     /// Latest raw touch target, approached over time.
     private var targetTouchUV = SIMD2<Float>(0.5, 0.5)
 
-    private var fromPalette: BackgroundPalette
-    private var toPalette: BackgroundPalette
-    private var destinationStyle: BackgroundStyle
-    private var transitionStartTime: CFTimeInterval?
-    private let transitionDuration: Float = 0.45
+    private var palette: BackgroundPalette
     private var settings = BackgroundEffectSettings()
 
     var onFPSUpdate: ((Double) -> Void)?
     private var frameCount: Int = 0
     private var fpsWindowStart = CACurrentMediaTime()
 
-    init?(device: MTLDevice, initialStyle: BackgroundStyle) {
+    init?(device: MTLDevice, initialPalette: BackgroundPalette) {
         guard let commandQueue = device.makeCommandQueue() else {
             return nil
         }
@@ -80,16 +76,14 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
             return nil
         }
 
-        let initialPalette = initialStyle.palette
-        self.fromPalette = initialPalette
-        self.toPalette = initialPalette
-        self.destinationStyle = initialStyle
+        self.palette = initialPalette
         self.commandQueue = commandQueue
     }
 
     /// Applies the latest UI settings used by subsequent frames.
-    func apply(settings: BackgroundEffectSettings) {
+    func apply(settings: BackgroundEffectSettings, palette: BackgroundPalette) {
         self.settings = settings
+        self.palette = palette
     }
 
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
@@ -112,13 +106,13 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
 
         // Palette transition uniforms.
         var transitionUniforms = TransitionUniforms(
-            fromTopColor: fromPalette.topColor,
-            fromBottomColor: fromPalette.bottomColor,
-            fromGlowColor: fromPalette.glowColor,
-            toTopColor: toPalette.topColor,
-            toBottomColor: toPalette.bottomColor,
-            toGlowColor: toPalette.glowColor,
-            progress: transitionProgress(at: now)
+            fromTopColor: palette.topColor,
+            fromBottomColor: palette.bottomColor,
+            fromGlowColor: palette.glowColor,
+            toTopColor: palette.topColor,
+            toBottomColor: palette.bottomColor,
+            toGlowColor: palette.glowColor,
+            progress: 1.0
         )
 
         // Effect tuning uniforms controlled by the settings sheet.
@@ -154,22 +148,6 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         }
     }
 
-    /// Starts a smooth color transition to the selected style.
-    func transition(to style: BackgroundStyle) {
-        guard style != destinationStyle else {
-            return
-        }
-
-        destinationStyle = style
-        let newPalette = style.palette
-        let now = CACurrentMediaTime()
-        let displayedPalette = interpolatedPalette(at: now)
-
-        fromPalette = displayedPalette
-        toPalette = newPalette
-        transitionStartTime = now
-    }
-
     /// Converts touch coordinates to normalized UV space for shader input.
     func updateTouchPosition(point: CGPoint, in size: CGSize) {
         guard size.width > 0, size.height > 0 else {
@@ -179,26 +157,6 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         let x = Float(point.x / size.width)
         let y = Float(1.0 - point.y / size.height)
         targetTouchUV = SIMD2<Float>(simd_clamp(x, 0.0, 1.0), simd_clamp(y, 0.0, 1.0))
-    }
-
-    private func transitionProgress(at now: CFTimeInterval) -> Float {
-        guard let start = transitionStartTime else {
-            return 1.0
-        }
-
-        let linear = min(Float((now - start) / Double(transitionDuration)), 1.0)
-        // Smoothstep easing keeps transitions soft at both ends.
-        let eased = linear * linear * (3.0 - 2.0 * linear)
-        if linear >= 1.0 {
-            fromPalette = toPalette
-            transitionStartTime = nil
-        }
-        return eased
-    }
-
-    private func interpolatedPalette(at now: CFTimeInterval) -> BackgroundPalette {
-        let t = transitionProgress(at: now)
-        return fromPalette.interpolated(to: toPalette, progress: t)
     }
 
     private static let shaderSource = """

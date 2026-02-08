@@ -19,7 +19,6 @@ struct ContentView: View {
     @AppStorage("viewPersonalizationSettingsData") private var personalizationData: Data = Data()
     /// Updated by `CurtainsRenderer` every ~0.5 seconds.
     @State private var fps: Double = 0
-    @State private var backgroundStyle: BackgroundStyle = .deepBlueCurtains
     @State private var showSettingsSheet = false
     /// Single source of truth for all user-adjustable visual parameters.
     @State private var personalization = ViewPersonalizationSettings.default
@@ -27,7 +26,6 @@ struct ContentView: View {
     var body: some View {
         CurtainsBackgroundView(
             fps: $fps,
-            style: backgroundStyle,
             settings: personalization.background
         )
         .ignoresSafeArea()
@@ -63,17 +61,6 @@ struct ContentView: View {
             .buttonStyle(.plain)
             .padding(.top, 16)
             .padding(.trailing, 16)
-        }
-        .overlay(alignment: .bottom) {
-            Picker("Background", selection: $backgroundStyle) {
-                ForEach(BackgroundStyle.allCases) { style in
-                    Text(style.rawValue).tag(style)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(4)
-            .background(.ultraThinMaterial, in: Capsule(style: .continuous))
-            .padding()
         }
         .sheet(isPresented: $showSettingsSheet) {
             SettingsSheetView(settings: $personalization)

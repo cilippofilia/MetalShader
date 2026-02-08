@@ -12,7 +12,6 @@ import UIKit
 /// SwiftUI wrapper around an `MTKView` that renders the animated background.
 struct CurtainsBackgroundView: UIViewRepresentable {
     @Binding var fps: Double
-    let style: BackgroundStyle
     let settings: BackgroundEffectSettings
 
     func makeCoordinator() -> Coordinator {
@@ -25,8 +24,8 @@ struct CurtainsBackgroundView: UIViewRepresentable {
         }
 
         let view = MTKView(frame: .zero, device: device)
-        // Keep this clear color aligned with the selected style for clean transitions.
-        view.clearColor = style.palette.clearColor
+        // Keep clear color aligned with the shader palette for clean edges.
+        view.clearColor = resolvedPalette.clearColor
         view.colorPixelFormat = .bgra8Unorm
         let maxFPS = UIApplication.shared.connectedScenes
             .compactMap { ($0 as? UIWindowScene)?.screen.maximumFramesPerSecond }
@@ -35,8 +34,8 @@ struct CurtainsBackgroundView: UIViewRepresentable {
         view.isPaused = false
         view.enableSetNeedsDisplay = false
 
-        let renderer = CurtainsRenderer(device: device, initialStyle: style)
-        renderer?.apply(settings: settings)
+        let renderer = CurtainsRenderer(device: device, initialPalette: resolvedPalette)
+        renderer?.apply(settings: settings, palette: resolvedPalette)
         context.coordinator.renderer = renderer
         renderer?.onFPSUpdate = { [weak coordinator = context.coordinator] value in
             DispatchQueue.main.async {
@@ -61,9 +60,17 @@ struct CurtainsBackgroundView: UIViewRepresentable {
 
     func updateUIView(_ uiView: MTKView, context: Context) {
         // Keep UI-level state and renderer state synchronized on every SwiftUI update.
-        uiView.clearColor = style.palette.clearColor
-        context.coordinator.renderer?.transition(to: style)
-        context.coordinator.renderer?.apply(settings: settings)
+        uiView.clearColor = resolvedPalette.clearColor
+        context.coordinator.renderer?.apply(settings: settings, palette: resolvedPalette)
+    }
+
+    private var resolvedPalette: BackgroundPalette {
+        BackgroundPalette.custom(baseColor: SIMD4<Float>(
+            Float(settings.customColor.red),
+            Float(settings.customColor.green),
+            Float(settings.customColor.blue),
+            Float(settings.customColor.alpha)
+        ))
     }
 
     /// Bridges UIKit gestures and renderer lifetime into SwiftUI.
@@ -102,4 +109,3 @@ struct CurtainsBackgroundView: UIViewRepresentable {
         }
     }
 }
-

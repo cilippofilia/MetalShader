@@ -1,5 +1,13 @@
 import Foundation
 
+/// Codable RGBA container used for persisted color customization.
+struct RGBAColor: Codable, Equatable {
+    var red: Double
+    var green: Double
+    var blue: Double
+    var alpha: Double = 1.0
+}
+
 /// Persisted root settings for the main visual components.
 struct ViewPersonalizationSettings: Codable, Equatable {
     var halo = HaloEffectSettings()
@@ -38,6 +46,8 @@ struct HaloEffectSettings: Codable, Equatable {
 struct BackgroundEffectSettings: Codable, Equatable {
     /// Enables or disables touch-driven glow contribution.
     var softGlowEnabled: Bool = true
+    /// Base color used to derive top/bottom/glow shades for the shader.
+    var customColor: RGBAColor = RGBAColor(red: 0.14, green: 0.34, blue: 0.72, alpha: 1.0)
     /// Vertical displacement amount of the wave.
     var waveAmplitude: Double = 0.08
     /// Number of wave oscillations across the X axis.
