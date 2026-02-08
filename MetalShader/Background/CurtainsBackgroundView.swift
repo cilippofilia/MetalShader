@@ -89,8 +89,16 @@ struct CurtainsBackgroundView: UIViewRepresentable {
             }
 
             let point = gesture.location(in: view)
-            // Renderer converts this point to normalized UV coordinates.
-            renderer.updateTouchPosition(point: point, in: view.bounds.size)
+            switch gesture.state {
+            case .began, .changed:
+                // Renderer converts this point to normalized UV coordinates.
+                renderer.updateTouchPosition(point: point, in: view.bounds.size)
+            case .ended, .cancelled, .failed:
+                renderer.updateTouchPosition(point: point, in: view.bounds.size)
+                renderer.endTouch(withVelocity: gesture.velocity(in: view), in: view.bounds.size)
+            default:
+                break
+            }
         }
 
         @objc func handleTap(_ gesture: UITapGestureRecognizer) {

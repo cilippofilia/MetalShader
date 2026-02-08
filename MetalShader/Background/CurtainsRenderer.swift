@@ -39,6 +39,12 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
     private var touchUV = SIMD2<Float>(0.5, 0.5)
     /// Latest raw touch target, approached over time.
     private var targetTouchUV = SIMD2<Float>(0.5, 0.5)
+    /// Inertial velocity (UV units per second) used after finger release.
+    private var touchVelocityUV = SIMD2<Float>(0.0, 0.0)
+    /// True while the user is actively dragging.
+    private var isTouchActive = false
+    /// Timestamp of the previous frame for stable time-step integration.
+    private var lastFrameTime = CACurrentMediaTime()
 
     private var palette: BackgroundPalette
     private var settings = BackgroundEffectSettings()
@@ -96,6 +102,33 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
 
         let now = CACurrentMediaTime()
         var time = Float(now - startTime)
+        let dt = Float(max(min(now - lastFrameTime, 1.0 / 20.0), 1.0 / 240.0))
+        lastFrameTime = now
+
+        if !isTouchActive {
+            // Continue moving after release, then gradually come to rest.
+            var nextTarget = targetTouchUV + touchVelocityUV * dt
+            let clamped = SIMD2<Float>(
+                simd_clamp(nextTarget.x, 0.0, 1.0),
+                simd_clamp(nextTarget.y, 0.0, 1.0)
+            )
+            if clamped.x != nextTarget.x {
+                touchVelocityUV.x = 0.0
+            }
+            if clamped.y != nextTarget.y {
+                touchVelocityUV.y = 0.0
+            }
+            nextTarget = clamped
+            targetTouchUV = nextTarget
+
+            // Exponential damping for smooth glide-out.
+            let damping = pow(0.1, dt)
+            touchVelocityUV *= damping
+            if simd_length_squared(touchVelocityUV) < 0.000001 {
+                touchVelocityUV = .zero
+            }
+        }
+
         // Smooth input to avoid abrupt glow jumps while dragging.
         touchUV += (targetTouchUV - touchUV) * Float(settings.touchFollowSpeed)
         var touch = touchUV
@@ -145,9 +178,26 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
             return
         }
 
+        isTouchActive = true
+        touchVelocityUV = .zero
         let x = Float(point.x / size.width)
         let y = Float(1.0 - point.y / size.height)
         targetTouchUV = SIMD2<Float>(simd_clamp(x, 0.0, 1.0), simd_clamp(y, 0.0, 1.0))
+    }
+
+    /// Ends active touch input and applies a release velocity for inertial glide.
+    func endTouch(withVelocity velocity: CGPoint, in size: CGSize) {
+        guard size.width > 0, size.height > 0 else {
+            isTouchActive = false
+            touchVelocityUV = .zero
+            return
+        }
+
+        isTouchActive = false
+        touchVelocityUV = SIMD2<Float>(
+            Float(velocity.x / size.width),
+            Float(-velocity.y / size.height)
+        )
     }
 
     private static let shaderSource = """
