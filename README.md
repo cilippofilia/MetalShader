@@ -1,4 +1,4 @@
-# MetalShaderTest
+# MetalShader
 
 SwiftUI + Metal iOS demo app with real-time shader visuals:
 - Animated full-screen "curtains" background.
