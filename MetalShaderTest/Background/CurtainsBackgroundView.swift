@@ -27,10 +27,8 @@ struct CurtainsBackgroundView: UIViewRepresentable {
         // Keep clear color aligned with the shader palette for clean edges.
         view.clearColor = resolvedPalette.clearColor
         view.colorPixelFormat = .bgra8Unorm
-        let maxFPS = UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.screen.maximumFramesPerSecond }
-            .max() ?? 60
-        view.preferredFramesPerSecond = maxFPS
+        view.framebufferOnly = true
+        view.preferredFramesPerSecond = 120
         view.isPaused = false
         view.enableSetNeedsDisplay = false
 
@@ -39,10 +37,7 @@ struct CurtainsBackgroundView: UIViewRepresentable {
         context.coordinator.renderer = renderer
         renderer?.onFPSUpdate = { [weak coordinator = context.coordinator] value in
             DispatchQueue.main.async {
-                // Animate text changes to reduce visual jitter in the FPS badge.
-                withAnimation {
-                    coordinator?.fps.wrappedValue = value
-                }
+                coordinator?.fps.wrappedValue = value
             }
         }
         view.delegate = renderer

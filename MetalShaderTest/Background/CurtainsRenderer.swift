@@ -12,15 +12,11 @@ import MetalKit
 /// Compiles shader source at runtime and drives touch-driven glow.
 final class CurtainsRenderer: NSObject, MTKViewDelegate {
     /// Uniform block for palette colors consumed by the shader.
-    private struct TransitionUniforms {
-        var fromTopColor: SIMD4<Float>
-        var fromBottomColor: SIMD4<Float>
-        var fromGlowColor: SIMD4<Float>
-        var toTopColor: SIMD4<Float>
-        var toBottomColor: SIMD4<Float>
-        var toGlowColor: SIMD4<Float>
-        var progress: Float
-        var padding: SIMD3<Float> = .zero
+    private struct PaletteUniforms {
+        var topColor: SIMD4<Float>
+        var bottomColor: SIMD4<Float>
+        var glowColor: SIMD4<Float>
+        var padding: Float = 0
     }
 
     /// Uniform block that controls wave and glow behavior.
@@ -104,15 +100,10 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         touchUV += (targetTouchUV - touchUV) * Float(settings.touchFollowSpeed)
         var touch = touchUV
 
-        // Palette transition uniforms.
-        var transitionUniforms = TransitionUniforms(
-            fromTopColor: palette.topColor,
-            fromBottomColor: palette.bottomColor,
-            fromGlowColor: palette.glowColor,
-            toTopColor: palette.topColor,
-            toBottomColor: palette.bottomColor,
-            toGlowColor: palette.glowColor,
-            progress: 1.0
+        var paletteUniforms = PaletteUniforms(
+            topColor: palette.topColor,
+            bottomColor: palette.bottomColor,
+            glowColor: palette.glowColor
         )
 
         // Effect tuning uniforms controlled by the settings sheet.
@@ -127,10 +118,10 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
 
         encoder.setRenderPipelineState(pipelineState)
         // Fragment buffers:
-        // 0 time, 1 touch uv, 2 transition colors, 3 effect settings.
+        // 0 time, 1 touch uv, 2 palette colors, 3 effect settings.
         encoder.setFragmentBytes(&time, length: MemoryLayout<Float>.size, index: 0)
         encoder.setFragmentBytes(&touch, length: MemoryLayout<SIMD2<Float>>.size, index: 1)
-        encoder.setFragmentBytes(&transitionUniforms, length: MemoryLayout<TransitionUniforms>.stride, index: 2)
+        encoder.setFragmentBytes(&paletteUniforms, length: MemoryLayout<PaletteUniforms>.stride, index: 2)
         encoder.setFragmentBytes(&effectUniforms, length: MemoryLayout<EffectUniforms>.stride, index: 3)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
@@ -168,15 +159,11 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         float2 uv;
     };
 
-    struct TransitionUniforms {
-        float4 fromTopColor;
-        float4 fromBottomColor;
-        float4 fromGlowColor;
-        float4 toTopColor;
-        float4 toBottomColor;
-        float4 toGlowColor;
-        float progress;
-        float3 padding;
+    struct PaletteUniforms {
+        float4 topColor;
+        float4 bottomColor;
+        float4 glowColor;
+        float padding;
     };
 
     struct EffectUniforms {
@@ -207,23 +194,18 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         VertexOut in [[stage_in]],
         constant float &time [[buffer(0)]],
         constant float2 &touch [[buffer(1)]],
-        constant TransitionUniforms &transition [[buffer(2)]],
+        constant PaletteUniforms &palette [[buffer(2)]],
         constant EffectUniforms &effects [[buffer(3)]]
     ) {
-        // Blend palettes so style switches are animated, not abrupt.
-        float3 topColor = mix(transition.fromTopColor.rgb, transition.toTopColor.rgb, transition.progress);
-        float3 bottomColor = mix(transition.fromBottomColor.rgb, transition.toBottomColor.rgb, transition.progress);
-        float3 glowColor = mix(transition.fromGlowColor.rgb, transition.toGlowColor.rgb, transition.progress);
-
         // Distort gradient with a horizontal sine wave.
         float wave = effects.waveAmplitude * sin((in.uv.x + time * effects.waveSpeed) * effects.waveFrequency);
         float t = clamp(in.uv.y + wave, 0.0, 1.0);
-        float3 color = mix(bottomColor, topColor, t);
+        float3 color = mix(palette.bottomColor.rgb, palette.topColor.rgb, t);
 
         // Radial glow that follows the latest touch point.
         float dist = distance(in.uv, touch);
         float glow = smoothstep(effects.touchGlowRadius, 0.0, dist) * effects.touchGlowIntensity * effects.softGlowEnabled;
-        color += glowColor * glow;
+        color += palette.glowColor.rgb * glow;
         return float4(color, 1.0);
     }
     """

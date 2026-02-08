@@ -7,6 +7,7 @@
 
 import MetalKit
 import SwiftUI
+import UIKit
 
 /// Transparent Metal overlay that renders the Siri-style animated halo border.
 struct SiriHaloBorderView: UIViewRepresentable {
@@ -27,10 +28,8 @@ struct SiriHaloBorderView: UIViewRepresentable {
         view.backgroundColor = .clear
         view.isOpaque = false
         view.colorPixelFormat = .bgra8Unorm
-        let maxFPS = UIApplication.shared.connectedScenes
-            .compactMap { ($0 as? UIWindowScene)?.screen.maximumFramesPerSecond }
-            .max() ?? 60
-        view.preferredFramesPerSecond = maxFPS
+        view.framebufferOnly = true
+        view.preferredFramesPerSecond = 120
         view.enableSetNeedsDisplay = false
         view.isPaused = false
 

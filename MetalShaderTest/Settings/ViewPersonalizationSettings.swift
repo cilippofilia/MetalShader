@@ -1,3 +1,10 @@
+//
+//  ViewPersonalizationSettings.swift
+//  MetalShaderTest
+//
+//  Created by Filippo Cilia on 08/02/2026.
+//
+
 import Foundation
 
 /// Codable RGBA container used for persisted color customization.

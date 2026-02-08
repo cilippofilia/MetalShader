@@ -34,9 +34,18 @@ struct ContentView: View {
             if personalization.halo.isVisible {
                 SiriHaloBorderView(settings: personalization.halo)
                     .ignoresSafeArea()
-                    // Overlay is visual only; touches should pass through to the background view.
+                // Overlay is visual only; touches should pass through to the background view.
                     .allowsHitTesting(false)
             }
+        }
+        .overlay(alignment: .topTrailing) {
+            Button {
+                showSettingsSheet = true
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+            }
+            .padding([.top, .trailing])
+            .buttonStyle(.glass)
         }
         .overlay(alignment: .topLeading) {
             // Lightweight performance indicator for shader tuning.
@@ -44,23 +53,9 @@ struct ContentView: View {
                 .font(.system(.subheadline, design: .monospaced))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
-                .background(.ultraThinMaterial, in: .rect(cornerRadius: 8, style: .continuous))
-                .padding(.top, 16)
-                .padding(.leading, 16)
+                .glassEffect()
+                .padding([.top, .leading])
                 .contentTransition(.numericText(value: fps))
-        }
-        .overlay(alignment: .topTrailing) {
-            Button {
-                showSettingsSheet = true
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 15, weight: .semibold))
-                    .padding(11)
-                    .background(.ultraThinMaterial, in: Circle())
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 16)
-            .padding(.trailing, 16)
         }
         .sheet(isPresented: $showSettingsSheet) {
             SettingsSheetView(settings: $personalization)

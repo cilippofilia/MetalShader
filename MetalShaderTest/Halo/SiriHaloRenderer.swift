@@ -2,7 +2,7 @@
 //  SiriHaloRenderer.swift
 //  MetalShaderTest
 //
-//  Created by Codex on 08/02/2026.
+//  Created by Filippo Cilia on 08/02/2026.
 //
 
 import Foundation
