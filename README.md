@@ -22,8 +22,17 @@ All visual parameters are adjustable from a settings sheet and persisted across 
 
 ## Examples
 
-- Halo effect demo: [examples/Halo.mov](examples/Halo.mov)
-- Soft glow background demo: [examples/softGlow.mov](examples/softGlow.mov)
+### Halo Effect
+
+<video src="examples/Halo.mov" controls muted playsinline width="420"></video>
+
+If the player does not render, open [examples/Halo.mov](examples/Halo.mov).
+
+### Soft Glow Background
+
+<video src="examples/softGlow.mov" controls muted playsinline width="420"></video>
+
+If the player does not render, open [examples/softGlow.mov](examples/softGlow.mov).
 
 ## Project Structure
 
