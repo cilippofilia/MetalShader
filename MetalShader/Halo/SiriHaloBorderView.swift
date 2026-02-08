@@ -12,6 +12,7 @@ import UIKit
 /// Transparent Metal overlay that renders the Siri-style animated halo border.
 struct SiriHaloBorderView: UIViewRepresentable {
     let settings: HaloEffectSettings
+    let preferredFramesPerSecond: Int
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -29,7 +30,7 @@ struct SiriHaloBorderView: UIViewRepresentable {
         view.isOpaque = false
         view.colorPixelFormat = .bgra8Unorm
         view.framebufferOnly = true
-        view.preferredFramesPerSecond = 120
+        view.preferredFramesPerSecond = preferredFramesPerSecond
         view.enableSetNeedsDisplay = false
         view.isPaused = false
 
@@ -42,6 +43,7 @@ struct SiriHaloBorderView: UIViewRepresentable {
 
     func updateUIView(_ uiView: MTKView, context: Context) {
         // Settings are pushed every SwiftUI update for immediate visual feedback.
+        uiView.preferredFramesPerSecond = preferredFramesPerSecond
         context.coordinator.renderer?.apply(settings: settings)
     }
 

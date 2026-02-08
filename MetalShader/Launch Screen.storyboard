@@ -4,6 +4,7 @@
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="24504"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -17,13 +18,13 @@
                         <subviews>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="MShaderIcon" translatesAutoresizingMaskIntoConstraints="NO" id="fPv-b8-z8H">
                                 <rect key="frame" x="132.66666666666666" y="351" width="127.99999999999997" height="128"/>
-                                <color key="tintColor" red="0.79607843137254897" green="0.49803921568627452" blue="0.16862745098039217" alpha="1" colorSpace="calibratedRGB"/>
+                                <color key="tintColor" systemColor="systemOrangeColor"/>
                             </imageView>
                             <label opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="MetalShader" textAlignment="center" lineBreakMode="middleTruncation" baselineAdjustment="alignBaselines" minimumFontSize="18" translatesAutoresizingMaskIntoConstraints="NO" id="GJd-Yh-RWb">
                                 <rect key="frame" x="0.0" y="503" width="393" height="36"/>
-                                <color key="tintColor" red="0.79607843137254897" green="0.49803921568627452" blue="0.16862745098039217" alpha="1" colorSpace="calibratedRGB"/>
+                                <color key="tintColor" systemColor="systemOrangeColor"/>
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="30"/>
-                                <color key="textColor" red="0.79607843137254897" green="0.49803921568627452" blue="0.16862745098039217" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                <color key="textColor" systemColor="systemOrangeColor"/>
                                 <nil key="highlightedColor"/>
                             </label>
                         </subviews>
@@ -47,5 +48,8 @@
     </scenes>
     <resources>
         <image name="MShaderIcon" width="750" height="750"/>
+        <systemColor name="systemOrangeColor">
+            <color red="1" green="0.55294117647058827" blue="0.15686274509803921" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
     </resources>
 </document>

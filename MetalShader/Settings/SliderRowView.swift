@@ -25,7 +25,6 @@ struct SliderRowView: View {
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
-                    .contentTransition(.numericText(value: value))
             }
             if let description, !description.isEmpty {
                 Text(description)

@@ -13,6 +13,7 @@ import UIKit
 struct CurtainsBackgroundView: UIViewRepresentable {
     @Binding var fps: Double
     let settings: BackgroundEffectSettings
+    let preferredFramesPerSecond: Int
 
     func makeCoordinator() -> Coordinator {
         Coordinator(fps: $fps)
@@ -28,7 +29,7 @@ struct CurtainsBackgroundView: UIViewRepresentable {
         view.clearColor = resolvedPalette.clearColor
         view.colorPixelFormat = .bgra8Unorm
         view.framebufferOnly = true
-        view.preferredFramesPerSecond = 120
+        view.preferredFramesPerSecond = preferredFramesPerSecond
         view.isPaused = false
         view.enableSetNeedsDisplay = false
 
@@ -55,6 +56,7 @@ struct CurtainsBackgroundView: UIViewRepresentable {
 
     func updateUIView(_ uiView: MTKView, context: Context) {
         // Keep UI-level state and renderer state synchronized on every SwiftUI update.
+        uiView.preferredFramesPerSecond = preferredFramesPerSecond
         uiView.clearColor = resolvedPalette.clearColor
         context.coordinator.renderer?.apply(settings: settings, palette: resolvedPalette)
     }

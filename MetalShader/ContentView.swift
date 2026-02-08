@@ -20,19 +20,24 @@ struct ContentView: View {
     /// Updated by `CurtainsRenderer` every ~0.5 seconds.
     @State private var fps: Double = 0
     @State private var showSettingsSheet = false
+    @State private var saveTask: Task<Void, Never>?
     /// Single source of truth for all user-adjustable visual parameters.
     @State private var personalization = ViewPersonalizationSettings.default
 
     var body: some View {
         CurtainsBackgroundView(
             fps: $fps,
-            settings: personalization.background
+            settings: personalization.background,
+            preferredFramesPerSecond: showSettingsSheet ? 60 : 120
         )
         .ignoresSafeArea()
         .overlay {
             // Halo is rendered in a separate transparent MTKView above the background.
             if personalization.halo.isVisible {
-                SiriHaloBorderView(settings: personalization.halo)
+                SiriHaloBorderView(
+                    settings: personalization.halo,
+                    preferredFramesPerSecond: showSettingsSheet ? 60 : 120
+                )
                     .ignoresSafeArea()
                 // Overlay is visual only; touches should pass through to the background view.
                     .allowsHitTesting(false)
@@ -64,7 +69,12 @@ struct ContentView: View {
         }
         .onAppear(perform: loadPersonalization)
         .onChange(of: personalization) { _, newValue in
-            savePersonalization(newValue)
+            schedulePersonalizationSave(newValue)
+        }
+        .onDisappear {
+            saveTask?.cancel()
+            saveTask = nil
+            savePersonalization(personalization)
         }
     }
 
@@ -88,6 +98,18 @@ struct ContentView: View {
             return
         }
         personalizationData = encoded
+    }
+
+    /// Coalesces rapid slider changes so persistence does not run every drag tick.
+    private func schedulePersonalizationSave(_ value: ViewPersonalizationSettings) {
+        saveTask?.cancel()
+        saveTask = Task {
+            try? await Task.sleep(for: .milliseconds(250))
+            guard !Task.isCancelled else {
+                return
+            }
+            savePersonalization(value)
+        }
     }
 }
 
