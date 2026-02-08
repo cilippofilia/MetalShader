@@ -24,15 +24,15 @@ All visual parameters are adjustable from a settings sheet and persisted across 
 
 ### Halo Effect
 
-<video src="examples/Halo.mov" controls muted playsinline width="420"></video>
+<video src="examples/halo.mp4" controls muted playsinline width="420"></video>
 
-If the player does not render, open [examples/Halo.mov](examples/Halo.mov).
+If the player does not render, open [examples/halo.mp4](examples/halo.mp4).
 
 ### Soft Glow Background
 
-<video src="examples/softGlow.mov" controls muted playsinline width="420"></video>
+<video src="examples/softGlow.mp4" controls muted playsinline width="420"></video>
 
-If the player does not render, open [examples/softGlow.mov](examples/softGlow.mov).
+If the player does not render, open [examples/softGlow.mp4](examples/softGlow.mp4).
 
 ## Project Structure
 
