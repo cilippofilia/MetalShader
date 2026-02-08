@@ -16,6 +16,11 @@ final class SiriHaloRenderer: NSObject, MTKViewDelegate {
         var viewSize: SIMD2<Float>
         var cornerRadius: Float
         var edgeInset: Float
+        var waveInsetPixels: Float
+        var waveAmplitudePixels: Float
+        var waveCount: Float
+        var waveSpeedMultiplier: Float
+        var waveSpeedOffset: Float
         var coreWidth: Float
         var glowWidth: Float
         var mistWidth: Float
@@ -93,6 +98,11 @@ final class SiriHaloRenderer: NSObject, MTKViewDelegate {
             viewSize: SIMD2<Float>(Float(view.drawableSize.width), Float(view.drawableSize.height)),
             cornerRadius: Float(settings.cornerRadius) / minDimension,
             edgeInset: Float(settings.edgeInset) / minDimension,
+            waveInsetPixels: Float(settings.waveInsetPixels),
+            waveAmplitudePixels: Float(settings.waveAmplitudePixels),
+            waveCount: Float(settings.waveCount),
+            waveSpeedMultiplier: Float(settings.waveSpeedMultiplier),
+            waveSpeedOffset: Float(settings.waveSpeedOffset),
             coreWidth: Float(settings.coreWidth) / minDimension,
             glowWidth: Float(settings.glowWidth) / minDimension,
             mistWidth: Float(settings.mistWidth) / minDimension,
@@ -126,6 +136,11 @@ final class SiriHaloRenderer: NSObject, MTKViewDelegate {
         float2 viewSize;
         float cornerRadius;
         float edgeInset;
+        float waveInsetPixels;
+        float waveAmplitudePixels;
+        float waveCount;
+        float waveSpeedMultiplier;
+        float waveSpeedOffset;
         float coreWidth;
         float glowWidth;
         float mistWidth;
@@ -188,14 +203,22 @@ final class SiriHaloRenderer: NSObject, MTKViewDelegate {
         float2 halfSize = float2(0.5 * aspect - uniforms.edgeInset, 0.5 - uniforms.edgeInset);
         float borderDistance = sdRoundedBox(p, halfSize, uniforms.cornerRadius);
 
+        // Position around the ring used for hue and wave motion.
+        float ringPhase = atan2(p.y, p.x) * 0.15915494309 + 0.5;
         float angle = atan2(p.y, p.x) * 0.15915494309 + 0.5 + uniforms.time * uniforms.colorShiftSpeed;
         float3 haloColor = siriSpectrum(angle);
 
         // Three layered gaussian bands create a rich, soft halo.
         float pulse = uniforms.pulseBase + uniforms.pulseAmount * sin(uniforms.time * uniforms.pulseSpeed);
-        float core = exp(-pow(borderDistance / max(uniforms.coreWidth, 0.0001), 2.0)) * 0.28;
-        float mid = exp(-pow(borderDistance / max(uniforms.glowWidth, 0.0001), 2.0)) * 0.26 * pulse;
-        float mist = exp(-pow(borderDistance / max(uniforms.mistWidth, 0.0001), 2.0)) * 0.16 * pulse;
+        // True geometric wave: displace the border path itself over time.
+        float minDimension = max(min(uniforms.viewSize.x, uniforms.viewSize.y), 1.0);
+        float waveInset = uniforms.waveInsetPixels / minDimension;
+        float waveAmplitude = uniforms.waveAmplitudePixels / minDimension;
+        float wave = sin(ringPhase * 6.28318530718 * uniforms.waveCount - uniforms.time * (uniforms.pulseSpeed * uniforms.waveSpeedMultiplier + uniforms.waveSpeedOffset));
+        float wavedDistance = borderDistance + waveInset + wave * waveAmplitude;
+        float core = exp(-pow(wavedDistance / max(uniforms.coreWidth, 0.0001), 2.0)) * 0.28;
+        float mid = exp(-pow(wavedDistance / max(uniforms.glowWidth, 0.0001), 2.0)) * 0.26 * pulse;
+        float mist = exp(-pow(wavedDistance / max(uniforms.mistWidth, 0.0001), 2.0)) * 0.16 * pulse;
 
         float innerFade = mix(smoothstep(-uniforms.mistWidth, 0.0, borderDistance), 1.0, step(0.0, borderDistance));
         float alpha = (core + mid + mist) * innerFade * uniforms.haloStrength;
