@@ -8,7 +8,10 @@
 import Foundation
 import MetalKit
 
+/// Metal renderer for the full-screen animated "curtains" background.
+/// Compiles shader source at runtime and drives transitions/touch-driven glow.
 final class CurtainsRenderer: NSObject, MTKViewDelegate {
+    /// Uniform block used to blend from one palette to another.
     private struct TransitionUniforms {
         var fromTopColor: SIMD4<Float>
         var fromBottomColor: SIMD4<Float>
@@ -20,11 +23,25 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         var padding: SIMD3<Float> = .zero
     }
 
+    /// Uniform block that controls wave and glow behavior.
+    private struct EffectUniforms {
+        var waveAmplitude: Float
+        var waveFrequency: Float
+        var waveSpeed: Float
+        var touchGlowRadius: Float
+        var touchGlowIntensity: Float
+        var softGlowEnabled: Float
+        var padding: SIMD2<Float> = .zero
+    }
+
     private let commandQueue: MTLCommandQueue
     private let pipelineState: MTLRenderPipelineState
+    /// Shared time origin for deterministic animation.
     private let startTime = CACurrentMediaTime()
 
+    /// Smoothed touch point used by shader.
     private var touchUV = SIMD2<Float>(0.5, 0.5)
+    /// Latest raw touch target, approached over time.
     private var targetTouchUV = SIMD2<Float>(0.5, 0.5)
 
     private var fromPalette: BackgroundPalette
@@ -32,6 +49,7 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
     private var destinationStyle: BackgroundStyle
     private var transitionStartTime: CFTimeInterval?
     private let transitionDuration: Float = 0.45
+    private var settings = BackgroundEffectSettings()
 
     var onFPSUpdate: ((Double) -> Void)?
     private var frameCount: Int = 0
@@ -43,6 +61,7 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         }
 
         do {
+            // Compile shader code embedded in this file.
             let library = try device.makeLibrary(source: Self.shaderSource, options: nil)
 
             guard
@@ -68,6 +87,11 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         self.commandQueue = commandQueue
     }
 
+    /// Applies the latest UI settings used by subsequent frames.
+    func apply(settings: BackgroundEffectSettings) {
+        self.settings = settings
+    }
+
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
     func draw(in view: MTKView) {
@@ -82,10 +106,12 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
 
         let now = CACurrentMediaTime()
         var time = Float(now - startTime)
-        touchUV += (targetTouchUV - touchUV) * 0.05
+        // Smooth input to avoid abrupt glow jumps while dragging.
+        touchUV += (targetTouchUV - touchUV) * Float(settings.touchFollowSpeed)
         var touch = touchUV
 
-        var uniforms = TransitionUniforms(
+        // Palette transition uniforms.
+        var transitionUniforms = TransitionUniforms(
             fromTopColor: fromPalette.topColor,
             fromBottomColor: fromPalette.bottomColor,
             fromGlowColor: fromPalette.glowColor,
@@ -95,10 +121,23 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
             progress: transitionProgress(at: now)
         )
 
+        // Effect tuning uniforms controlled by the settings sheet.
+        var effectUniforms = EffectUniforms(
+            waveAmplitude: Float(settings.waveAmplitude),
+            waveFrequency: Float(settings.waveFrequency),
+            waveSpeed: Float(settings.waveSpeed),
+            touchGlowRadius: Float(settings.touchGlowRadius),
+            touchGlowIntensity: Float(settings.touchGlowIntensity),
+            softGlowEnabled: settings.softGlowEnabled ? 1.0 : 0.0
+        )
+
         encoder.setRenderPipelineState(pipelineState)
+        // Fragment buffers:
+        // 0 time, 1 touch uv, 2 transition colors, 3 effect settings.
         encoder.setFragmentBytes(&time, length: MemoryLayout<Float>.size, index: 0)
         encoder.setFragmentBytes(&touch, length: MemoryLayout<SIMD2<Float>>.size, index: 1)
-        encoder.setFragmentBytes(&uniforms, length: MemoryLayout<TransitionUniforms>.stride, index: 2)
+        encoder.setFragmentBytes(&transitionUniforms, length: MemoryLayout<TransitionUniforms>.stride, index: 2)
+        encoder.setFragmentBytes(&effectUniforms, length: MemoryLayout<EffectUniforms>.stride, index: 3)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
 
@@ -108,12 +147,14 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         frameCount += 1
         let elapsed = now - fpsWindowStart
         if elapsed >= 0.5 {
+            // Average over a small window to reduce FPS noise.
             onFPSUpdate?(Double(frameCount) / elapsed)
             frameCount = 0
             fpsWindowStart = now
         }
     }
 
+    /// Starts a smooth color transition to the selected style.
     func transition(to style: BackgroundStyle) {
         guard style != destinationStyle else {
             return
@@ -129,6 +170,7 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         transitionStartTime = now
     }
 
+    /// Converts touch coordinates to normalized UV space for shader input.
     func updateTouchPosition(point: CGPoint, in size: CGSize) {
         guard size.width > 0, size.height > 0 else {
             return
@@ -145,6 +187,7 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         }
 
         let linear = min(Float((now - start) / Double(transitionDuration)), 1.0)
+        // Smoothstep easing keeps transitions soft at both ends.
         let eased = linear * linear * (3.0 - 2.0 * linear)
         if linear >= 1.0 {
             fromPalette = toPalette
@@ -178,7 +221,18 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         float3 padding;
     };
 
+    struct EffectUniforms {
+        float waveAmplitude;
+        float waveFrequency;
+        float waveSpeed;
+        float touchGlowRadius;
+        float touchGlowIntensity;
+        float softGlowEnabled;
+        float2 padding;
+    };
+
     vertex VertexOut vertex_main(uint vertexID [[vertex_id]]) {
+        // Full-screen triangle (faster than a quad, no diagonal seam).
         float2 positions[3] = {
             float2(-1.0, -1.0),
             float2( 3.0, -1.0),
@@ -195,18 +249,22 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         VertexOut in [[stage_in]],
         constant float &time [[buffer(0)]],
         constant float2 &touch [[buffer(1)]],
-        constant TransitionUniforms &transition [[buffer(2)]]
+        constant TransitionUniforms &transition [[buffer(2)]],
+        constant EffectUniforms &effects [[buffer(3)]]
     ) {
+        // Blend palettes so style switches are animated, not abrupt.
         float3 topColor = mix(transition.fromTopColor.rgb, transition.toTopColor.rgb, transition.progress);
         float3 bottomColor = mix(transition.fromBottomColor.rgb, transition.toBottomColor.rgb, transition.progress);
         float3 glowColor = mix(transition.fromGlowColor.rgb, transition.toGlowColor.rgb, transition.progress);
 
-        float wave = 0.08 * sin((in.uv.x + time * 0.2) * 8.0);
+        // Distort gradient with a horizontal sine wave.
+        float wave = effects.waveAmplitude * sin((in.uv.x + time * effects.waveSpeed) * effects.waveFrequency);
         float t = clamp(in.uv.y + wave, 0.0, 1.0);
         float3 color = mix(bottomColor, topColor, t);
 
+        // Radial glow that follows the latest touch point.
         float dist = distance(in.uv, touch);
-        float glow = smoothstep(0.35, 0.0, dist);
+        float glow = smoothstep(effects.touchGlowRadius, 0.0, dist) * effects.touchGlowIntensity * effects.softGlowEnabled;
         color += glowColor * glow;
         return float4(color, 1.0);
     }

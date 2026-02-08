@@ -8,6 +8,7 @@
 import Foundation
 import Metal
 
+/// Supported visual themes for the animated curtain background.
 enum BackgroundStyle: String, CaseIterable, Identifiable {
     case deepBlueCurtains = "Deep Blue"
     case deepRedCurtains = "Deep Red"
@@ -15,6 +16,7 @@ enum BackgroundStyle: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
+    /// Predefined colors for gradient, glow, and MTKView clear color.
     var palette: BackgroundPalette {
         switch self {
         case .deepBlueCurtains:
@@ -42,12 +44,14 @@ enum BackgroundStyle: String, CaseIterable, Identifiable {
     }
 }
 
+/// Color set used by the background shader and the view clear color.
 struct BackgroundPalette {
     let topColor: SIMD4<Float>
     let bottomColor: SIMD4<Float>
     let glowColor: SIMD4<Float>
     let clearColor: MTLClearColor
 
+    /// Linearly interpolates each color component to support smooth style transitions.
     func interpolated(to target: BackgroundPalette, progress: Float) -> BackgroundPalette {
         let p = max(0.0, min(1.0, progress))
         return BackgroundPalette(
