@@ -49,6 +49,8 @@ struct SettingsSheetView: View {
                     SliderRowView(title: "Glow Radius", description: "Size of the touch glow area.", value: $settings.background.touchGlowRadius, range: 0.05...0.9, step: 0.01)
                     SliderRowView(title: "Glow Intensity", description: "Brightness of the touch glow.", value: $settings.background.touchGlowIntensity, range: 0...2.6, step: 0.01)
                     SliderRowView(title: "Touch Follow", description: "How quickly glow follows finger movement.", value: $settings.background.touchFollowSpeed, range: 0.01...0.3, step: 0.005)
+                    SliderRowView(title: "Inertia Strength", description: "How much release velocity carries into glide.", value: $settings.background.touchInertiaStrength, range: 0...3, step: 0.05)
+                    SliderRowView(title: "Inertia Damping", description: "Higher values keep glow moving longer after lift.", value: $settings.background.touchInertiaDamping, range: 0.02...0.98, step: 0.01)
                 }
             }
             .navigationTitle("Personalize")

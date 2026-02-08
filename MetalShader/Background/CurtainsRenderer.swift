@@ -122,7 +122,8 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
             targetTouchUV = nextTarget
 
             // Exponential damping for smooth glide-out.
-            let damping = pow(0.1, dt)
+            let dampingBase = simd_clamp(Float(settings.touchInertiaDamping), 0.01, 0.999)
+            let damping = pow(dampingBase, dt)
             touchVelocityUV *= damping
             if simd_length_squared(touchVelocityUV) < 0.000001 {
                 touchVelocityUV = .zero
@@ -194,10 +195,12 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         }
 
         isTouchActive = false
+        let strength = max(Float(settings.touchInertiaStrength), 0.0)
         touchVelocityUV = SIMD2<Float>(
             Float(velocity.x / size.width),
             Float(-velocity.y / size.height)
         )
+        touchVelocityUV *= strength
     }
 
     private static let shaderSource = """

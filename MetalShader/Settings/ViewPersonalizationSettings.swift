@@ -118,4 +118,37 @@ struct BackgroundEffectSettings: Codable, Equatable {
     var touchGlowIntensity: Double = 1.0
     /// Interpolation factor used to smooth touch movement.
     var touchFollowSpeed: Double = 0.05
+    /// Multiplier applied to release velocity for post-touch glide.
+    var touchInertiaStrength: Double = 1.0
+    /// Velocity retained after one second; higher values glide longer.
+    var touchInertiaDamping: Double = 0.1
+
+    private enum CodingKeys: String, CodingKey {
+        case softGlowEnabled
+        case customColor
+        case waveAmplitude
+        case waveFrequency
+        case waveSpeed
+        case touchGlowRadius
+        case touchGlowIntensity
+        case touchFollowSpeed
+        case touchInertiaStrength
+        case touchInertiaDamping
+    }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        softGlowEnabled = try container.decodeIfPresent(Bool.self, forKey: .softGlowEnabled) ?? true
+        customColor = try container.decodeIfPresent(RGBAColor.self, forKey: .customColor) ?? RGBAColor(red: 0.14, green: 0.34, blue: 0.72, alpha: 1.0)
+        waveAmplitude = try container.decodeIfPresent(Double.self, forKey: .waveAmplitude) ?? 0.08
+        waveFrequency = try container.decodeIfPresent(Double.self, forKey: .waveFrequency) ?? 8.0
+        waveSpeed = try container.decodeIfPresent(Double.self, forKey: .waveSpeed) ?? 0.2
+        touchGlowRadius = try container.decodeIfPresent(Double.self, forKey: .touchGlowRadius) ?? 0.35
+        touchGlowIntensity = try container.decodeIfPresent(Double.self, forKey: .touchGlowIntensity) ?? 1.0
+        touchFollowSpeed = try container.decodeIfPresent(Double.self, forKey: .touchFollowSpeed) ?? 0.05
+        touchInertiaStrength = try container.decodeIfPresent(Double.self, forKey: .touchInertiaStrength) ?? 1.0
+        touchInertiaDamping = try container.decodeIfPresent(Double.self, forKey: .touchInertiaDamping) ?? 0.1
+    }
 }
