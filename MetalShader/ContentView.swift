@@ -38,9 +38,9 @@ struct ContentView: View {
                     settings: personalization.halo,
                     preferredFramesPerSecond: showSettingsSheet ? 60 : 120
                 )
-                    .ignoresSafeArea()
+                .ignoresSafeArea()
                 // Overlay is visual only; touches should pass through to the background view.
-                    .allowsHitTesting(false)
+                .allowsHitTesting(false)
             }
         }
         .overlay(alignment: .topTrailing) {
@@ -51,16 +51,6 @@ struct ContentView: View {
             }
             .padding([.top, .trailing])
             .buttonStyle(.glass)
-        }
-        .overlay(alignment: .topLeading) {
-            // Lightweight performance indicator for shader tuning.
-            Text("FPS \(Int(fps.rounded()))")
-                .font(.system(.subheadline, design: .monospaced))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .glassEffect()
-                .padding([.top, .leading])
-                .contentTransition(.numericText(value: fps))
         }
         .sheet(isPresented: $showSettingsSheet) {
             SettingsSheetView(settings: $personalization)
