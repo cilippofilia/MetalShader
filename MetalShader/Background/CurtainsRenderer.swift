@@ -59,12 +59,10 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         }
 
         do {
-            // Compile shader code embedded in this file.
-            let library = try device.makeLibrary(source: Self.shaderSource, options: nil)
-
             guard
-                let vertexFunction = library.makeFunction(name: "vertex_main"),
-                let fragmentFunction = library.makeFunction(name: "fragment_main")
+                let library = device.makeDefaultLibrary(),
+                let vertexFunction = library.makeFunction(name: "fullscreen_vertex"),
+                let fragmentFunction = library.makeFunction(name: "curtains_fragment")
             else {
                 return nil
             }
@@ -203,63 +201,4 @@ final class CurtainsRenderer: NSObject, MTKViewDelegate {
         touchVelocityUV *= strength
     }
 
-    private static let shaderSource = """
-    #include <metal_stdlib>
-    using namespace metal;
-
-    struct VertexOut {
-        float4 position [[position]];
-        float2 uv;
-    };
-
-    struct PaletteUniforms {
-        float4 topColor;
-        float4 bottomColor;
-        float4 glowColor;
-        float padding;
-    };
-
-    struct EffectUniforms {
-        float waveAmplitude;
-        float waveFrequency;
-        float waveSpeed;
-        float touchGlowRadius;
-        float touchGlowIntensity;
-        float softGlowEnabled;
-        float2 padding;
-    };
-
-    vertex VertexOut vertex_main(uint vertexID [[vertex_id]]) {
-        // Full-screen triangle (faster than a quad, no diagonal seam).
-        float2 positions[3] = {
-            float2(-1.0, -1.0),
-            float2( 3.0, -1.0),
-            float2(-1.0,  3.0)
-        };
-
-        VertexOut out;
-        out.position = float4(positions[vertexID], 0.0, 1.0);
-        out.uv = positions[vertexID] * 0.5 + 0.5;
-        return out;
-    }
-
-    fragment float4 fragment_main(
-        VertexOut in [[stage_in]],
-        constant float &time [[buffer(0)]],
-        constant float2 &touch [[buffer(1)]],
-        constant PaletteUniforms &palette [[buffer(2)]],
-        constant EffectUniforms &effects [[buffer(3)]]
-    ) {
-        // Distort gradient with a horizontal sine wave.
-        float wave = effects.waveAmplitude * sin((in.uv.x + time * effects.waveSpeed) * effects.waveFrequency);
-        float t = clamp(in.uv.y + wave, 0.0, 1.0);
-        float3 color = mix(palette.bottomColor.rgb, palette.topColor.rgb, t);
-
-        // Radial glow that follows the latest touch point.
-        float dist = distance(in.uv, touch);
-        float glow = smoothstep(effects.touchGlowRadius, 0.0, dist) * effects.touchGlowIntensity * effects.softGlowEnabled;
-        color += palette.glowColor.rgb * glow;
-        return float4(color, 1.0);
-    }
-    """
 }
