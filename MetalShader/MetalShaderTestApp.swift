@@ -12,7 +12,7 @@ import SwiftUI
 struct MetalShaderTestApp: App {
     var body: some Scene {
         WindowGroup {
-            BackgroundView()
+            ContentView()
         }
     }
 }

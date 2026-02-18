@@ -1,5 +1,5 @@
 //
-//  BackgroundView.swift
+//  ContentView.swift
 //  MetalShaderTest
 //
 //  Created by Filippo Cilia on 07/02/2026.
@@ -13,7 +13,7 @@ import SwiftUI
 /// - Optional Siri-like border halo
 /// - Live FPS and personalization controls
 /// Settings are persisted with `@AppStorage` as JSON.
-struct BackgroundView: View {
+struct ContentView: View {
     /// JSON blob containing `ViewPersonalizationSettings`.
     /// Stored in user defaults via `@AppStorage`.
     @AppStorage("viewPersonalizationSettingsData") private var personalizationData: Data = Data()
@@ -21,7 +21,6 @@ struct BackgroundView: View {
     @State private var fps: Double = 0
     @State private var showSettingsSheet = false
     @State private var saveTask: Task<Void, Never>?
-    @State private var showTextOverlay = false
     /// Single source of truth for all user-adjustable visual parameters.
     @State private var personalization = ViewPersonalizationSettings.default
 
@@ -45,40 +44,13 @@ struct BackgroundView: View {
             }
         }
         .overlay(alignment: .topTrailing) {
-            Button("Settings", systemImage: "slider.horizontal.3") {
+            Button {
                 showSettingsSheet = true
+            } label: {
+                Image(systemName: "slider.horizontal.3")
             }
             .padding([.top, .trailing])
             .buttonStyle(.glass)
-            .labelStyle(.iconOnly)
-        }
-        .overlay(alignment: .bottom) {
-            Button("Show Overlay", systemImage: "text.cursor") {
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    showTextOverlay = true
-                }
-            }
-            .buttonStyle(.glass)
-            .labelStyle(.iconOnly)
-        }
-        .overlay {
-            if showTextOverlay {
-                ZStack(alignment: .topLeading) {
-                    Rectangle()
-                        .fill(.ultraThinMaterial.opacity(0.25))
-                        .ignoresSafeArea()
-
-                    Button("Dismiss Overlay", systemImage: "xmark") {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            showTextOverlay = false
-                        }
-                    }
-                    .padding()
-                    .buttonStyle(.glass)
-                    .labelStyle(.iconOnly)
-                }
-                .transition(.opacity)
-            }
         }
         .sheet(isPresented: $showSettingsSheet) {
             SettingsSheetView(settings: $personalization)
@@ -132,5 +104,5 @@ struct BackgroundView: View {
 }
 
 #Preview {
-    BackgroundView()
+    ContentView()
 }

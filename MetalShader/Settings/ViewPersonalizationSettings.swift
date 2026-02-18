@@ -103,7 +103,7 @@ struct HaloEffectSettings: Codable, Equatable {
 /// User-tweakable parameters for the curtains background renderer.
 struct BackgroundEffectSettings: Codable, Equatable {
     /// Enables or disables touch-driven glow contribution.
-    var softGlowEnabled: Bool = false
+    var softGlowEnabled: Bool = true
     /// Base color used to derive top/bottom/glow shades for the shader.
     var customColor: RGBAColor = RGBAColor(red: 0.14, green: 0.34, blue: 0.72, alpha: 1.0)
     /// Vertical displacement amount of the wave.
