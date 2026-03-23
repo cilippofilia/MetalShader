@@ -1,61 +1,29 @@
-# MetalShader: Real-time SwiftUI and Metal shader playground
+# MetalShader
 
-## About
+MetalShader is a small iOS SwiftUI playground for real-time Metal effects. It combines a full-screen animated background with an optional Siri-style halo overlay, then exposes both renderers through a live settings sheet so you can tune the visuals while the app is running.
 
-MetalShader is an iOS SwiftUI demo app for experimenting with live Metal-rendered visuals. The app combines a full-screen animated background with an optional Siri-style halo overlay, then exposes the visual parameters through an in-app settings sheet so you can tune the effect in real time.
+It is useful as both a shader playground and a compact reference for layering Metal-backed views inside a SwiftUI app, handling touch-driven effects, and persisting visual personalization across launches.
 
-All personalization settings are persisted across launches, which makes the project useful both as a shader playground and as a reference for wiring Metal rendering into a SwiftUI app.
+## Demo
 
-## Features
+### Halo overlay
 
-### Visuals
+[examples/halo.mov](examples/halo.mov)
 
-- Full-screen animated background rendered by `CurtainsRenderer`
-- Optional transparent halo border rendered by `SiriHaloRenderer`
-- Touch-driven glow with smoothing, inertia, and wall-bounce behavior
-- Live animation updates as settings change
+### Soft glow background
 
-### Personalization
+[examples/softGlow.mov](examples/softGlow.mov)
 
-- Settings sheet for halo and background tuning
-- Persisted settings stored through `@AppStorage` as encoded JSON
-- Separate settings models for halo and background effects
-- Automatic save coalescing to avoid writing on every slider tick
+## What it shows
 
-### Runtime Behavior
+- Animated Metal background rendered in a full-screen `MTKView`
+- Optional transparent halo border rendered in a second Metal layer above the background
+- Touch-driven glow behavior with smoothing and inertia
+- Live parameter editing from a SwiftUI sheet
+- Persisted personalization stored as JSON with `@AppStorage`
+- Runtime loading of bundled `.metal` shader sources
 
-- FPS tracking surfaced from the background renderer
-- Reduced preferred frame rate while the settings sheet is open
-- Runtime shader compilation from bundled `.metal` sources
-
-## Requirements
-
-- Xcode 26 or later
-- iOS 26.0+
-
-The checked-in Xcode project currently uses iOS 26.0 deployment settings for the app target.
-
-## Getting Started
-
-1. Open the project in Xcode:
-
-```bash
-open MetalShader.xcodeproj
-```
-
-2. Select the `MetalShader` scheme.
-
-3. Choose an iPhone simulator or device.
-
-4. Build and run.
-
-## Demos
-
-- [Halo demo](examples/halo.mov)
-- [Soft glow background demo](examples/softGlow.mov)
-- [Additional recording](examples/Untitled.mov)
-
-## Project Structure
+## Project structure
 
 ```text
 MetalShader/
@@ -72,38 +40,40 @@ MetalShader/
 └── MetalShader.xcodeproj
 ```
 
-Key files:
+## Key files
 
-- `MetalShader/ContentView.swift` wires the background, halo overlay, settings sheet, FPS state, and persistence.
-- `MetalShader/Background/CurtainsBackgroundView.swift` and `MetalShader/Background/CurtainsRenderer.swift` drive the background effect.
-- `MetalShader/Halo/SiriHaloBorderView.swift` and `MetalShader/Halo/SiriHaloRenderer.swift` drive the transparent halo overlay.
-- `MetalShader/Settings/ViewPersonalizationSettings.swift` defines the codable settings models for the app.
-- `MetalShader/Settings/SettingsSheetView.swift` exposes the tuning UI.
+- `MetalShader/ContentView.swift` composes the background, halo overlay, settings sheet, and persistence flow.
+- `MetalShader/Background/CurtainsBackgroundView.swift` hosts the background `MTKView`.
+- `MetalShader/Background/CurtainsRenderer.swift` drives the animated curtains effect, touch glow, and FPS reporting.
+- `MetalShader/Halo/SiriHaloBorderView.swift` hosts the transparent halo overlay view.
+- `MetalShader/Halo/SiriHaloRenderer.swift` draws the animated halo border.
+- `MetalShader/Settings/SettingsSheetView.swift` exposes the live tuning UI.
+- `MetalShader/Settings/ViewPersonalizationSettings.swift` defines the codable settings models used for persistence.
 
-## Settings Overview
+## Requirements
 
-Halo controls include:
+- Xcode 26 or later
+- iOS 26.0 or later
+- A simulator or device with Metal support
 
-- visibility
-- corner radius and edge inset
-- wave inset, amplitude, count, and speed controls
-- core, glow, and mist widths
-- strength, pulse base, pulse amount, and pulse speed
-- color shift speed
+## Run locally
 
-Background controls include:
+1. Open [`MetalShader.xcodeproj`](MetalShader.xcodeproj) in Xcode.
+2. Select the `MetalShader` scheme.
+3. Choose an iPhone simulator or device.
+4. Build and run.
 
-- soft glow enablement
-- custom base color
-- wave amplitude, frequency, and speed
-- touch glow radius and intensity
-- touch follow smoothing
-- inertia strength and damping
+## Personalization controls
 
-## Development Notes
+The settings sheet exposes two groups of controls:
 
-- The root app entry point is `MetalShader/MetalShaderTestApp.swift`.
-- Settings are encoded from `ViewPersonalizationSettings` and persisted through `@AppStorage`.
-- Save operations are debounced with a short async delay to reduce churn during slider drags.
-- The halo overlay is rendered in a separate transparent `MTKView` layered above the background.
-- Shader sources live in bundled `.metal` files rather than inline strings.
+- Halo settings for visibility, corner radius, wave shape, glow widths, pulse values, and color shift speed
+- Background settings for base color, wave motion, soft glow, touch radius, follow speed, and inertia behavior
+
+Changes are applied live and saved across launches.
+
+## Notes
+
+- The app entry point is `MetalShader/MetalShaderTestApp.swift`.
+- The halo is rendered in a separate transparent `MTKView` layered above the background.
+- Settings writes are coalesced with a short async delay to avoid saving on every slider update.
